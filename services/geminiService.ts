@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Chat, Type } from "@google/genai";
 import { PlayerState, GameEvent } from "../types";
 
@@ -7,56 +6,64 @@ let chatSession: Chat | null = null;
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
- * AI Advisor (Eddie) remains dynamic as it is a real-time chat interface.
+ * AI Advisor (Eddie) using high-quality Pro model for complex financial reasoning.
  */
 export const getAdvisorGuidance = async (playerState: PlayerState, question: string) => {
   if (!chatSession) {
     chatSession = ai.chats.create({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       config: {
         systemInstruction: `
-          שמך EDDIE. אתה עוזר פיננסי ציני ומדויק. 
-          אתה לא נותן עצות רגשיות, רק נתונים יבשים על שוק ההון, נדל"ן וקריירה.
-          ענה בקצרה ובשפה מקצועית.
+          שמך EDDIE. אתה עוזר פיננסי ציני, מושחז ומדויק להפליא. 
+          אתה מומחה לכלכלה, שוק ההון וניהול קריירה.
+          אתה פונה לבני נוער בגובה העיניים אבל לא חוסך מהם את האמת הקשה על עולם המבוגרים.
+          תפקידך לתת עצות אסטרטגיות מבוססות נתונים בלבד.
+          אל תהיה נחמד מדי - תהיה מקצועי.
+          ענה בעברית רהוטה וקצרה.
         `,
-        temperature: 0.8,
+        temperature: 0.7,
+        thinkingConfig: {
+          thinkingBudget: 4000
+        }
       },
     });
   }
 
   const contextPrompt = `
-    מצב שחקן: ${playerState.money}₪, ${playerState.happiness}%, ג׳וב: ${playerState.job.name}, חובות: ${playerState.loans}₪.
-    שאלה: "${question}"
+    קונטקסט שחקן נוכחי:
+    - מזומן: ${playerState.money}₪
+    - חסכונות: ${playerState.savings}₪
+    - אושר: ${playerState.happiness}%
+    - עבודה: ${playerState.job.name} (שכר: ${playerState.job.salary}₪)
+    - חובות: ${playerState.loans}₪
+    - נכסים: ${playerState.inventory.join(', ') || 'אין'}
+
+    שאלה מהשחקן: "${question}"
   `;
 
   try {
     const response = await chatSession.sendMessage({ message: contextPrompt });
     return response.text;
   } catch (error) {
+    console.error("AI Guidance Error:", error);
     chatSession = null;
-    return "שגיאת תקשורת במערכת הבנקאית.";
+    return "מצטער, יש לי תקלה בסינפסות הדיגיטליות. נסה שוב מאוחר יותר.";
   }
 };
 
 /**
- * Generates a full game event using AI
+ * Generates dynamic game events using the Flash model for speed.
  */
 export const generateEventContent = async (type: string): Promise<Partial<GameEvent>> => {
   const prompt = `
-    צור אירוע משחק חדש מסוג ${type} עבור סימולטור כלכלי לבני נוער.
-    האירוע צריך להיות בעברית, מעניין, ומתאים לעולם המודרני/עתידני.
-    
-    כללים:
-    1. כותרת קצרה וקולעת.
-    2. תיאור שמסביר לשחקן מה קרה.
-    3. 'intel' - טיפ מקצועי/ציני מהעוזר הדיגיטלי אדי על המצב.
-    4. אימפקט כלכלי (money) ואושר (happiness) מאוזנים.
+    צור אירוע משחק חדש מסוג ${type} עבור סימולטור כלכלה לבני נוער.
+    האירוע צריך להיות בעברית, חדשני ורלוונטי לחיים האמיתיים.
     
     סוגי אירועים:
-    - LUCK: משהו שקורה במקרה (זכייה, מציאה, קנס פתאומי).
-    - MISSION: משימה לימודית (זיהוי פישינג, הבנת ריבית).
-    - OPPORTUNITY: הזדמנות עסקית/השקעה.
-    - DECISION: בחירה יומיומית בין נוחות לחיסכון.
+    - LUCK: מזל (טוב או רע).
+    - MISSION: משימה קצרה.
+    - OPPORTUNITY: השקעה או רכישה.
+    - DECISION: דילמה יומיומית.
   `;
 
   try {
